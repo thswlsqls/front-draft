@@ -31,6 +31,15 @@ export function SignupForm() {
         break;
       case "password":
         error = validatePassword(value);
+        if (touched.confirmPassword && confirmPassword) {
+          const matchError = confirmPassword !== value ? "Passwords do not match." : null;
+          setErrors((prev) => {
+            const next = { ...prev };
+            if (matchError) next.confirmPassword = matchError;
+            else delete next.confirmPassword;
+            return next;
+          });
+        }
         break;
       case "confirmPassword":
         error = value !== password ? "Passwords do not match." : null;

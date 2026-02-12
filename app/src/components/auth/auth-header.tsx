@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ChevronDown, LogOut, Trash2 } from "lucide-react";
 import { Popover as PopoverPrimitive } from "radix-ui";
 import { useAuth } from "@/contexts/auth-context";
@@ -11,6 +12,7 @@ import { DeleteAccountDialog } from "./delete-account-dialog";
 export function AuthHeader() {
   const { user, isLoading, logout } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -47,8 +49,33 @@ export function AuthHeader() {
     );
   }
 
+  const isBookmarksActive = pathname.startsWith("/bookmarks");
+  const isChatActive = pathname.startsWith("/chat");
+
   return (
     <div className="flex items-center gap-3">
+      <Link
+        href="/bookmarks"
+        className={`text-sm font-bold transition-colors ${
+          isBookmarksActive
+            ? "text-[#3B82F6]"
+            : "hover:text-[#3B82F6]"
+        }`}
+      >
+        Bookmarks
+      </Link>
+
+      <Link
+        href="/chat"
+        className={`text-sm font-bold transition-colors ${
+          isChatActive
+            ? "text-[#3B82F6]"
+            : "hover:text-[#3B82F6]"
+        }`}
+      >
+        Chat
+      </Link>
+
       <PopoverPrimitive.Root open={menuOpen} onOpenChange={setMenuOpen}>
         <PopoverPrimitive.Trigger asChild>
           <button className="flex items-center gap-1.5 text-sm font-bold hover:text-[#3B82F6] transition-colors">

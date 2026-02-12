@@ -22,7 +22,18 @@ export function ResetPasswordConfirmForm({ token }: Props) {
 
   function validateField(name: string, value: string) {
     let error: string | null = null;
-    if (name === "newPassword") error = validatePassword(value);
+    if (name === "newPassword") {
+      error = validatePassword(value);
+      if (touched.confirmPassword && confirmPassword) {
+        const matchError = confirmPassword !== value ? "Passwords do not match." : null;
+        setErrors((prev) => {
+          const next = { ...prev };
+          if (matchError) next.confirmPassword = matchError;
+          else delete next.confirmPassword;
+          return next;
+        });
+      }
+    }
     if (name === "confirmPassword")
       error = value !== newPassword ? "Passwords do not match." : null;
 

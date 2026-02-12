@@ -1,7 +1,22 @@
 "use client";
 
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { Loader2 } from "lucide-react";
 import { ResetPasswordForm } from "@/components/auth/reset-password-form";
+import { ResetPasswordConfirmForm } from "@/components/auth/reset-password-confirm-form";
+
+function ResetPasswordContent() {
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
+
+  if (token) {
+    return <ResetPasswordConfirmForm token={token} />;
+  }
+
+  return <ResetPasswordForm />;
+}
 
 export default function ResetPasswordPage() {
   return (
@@ -18,7 +33,15 @@ export default function ResetPasswordPage() {
       </header>
 
       <main className="mx-auto max-w-md px-6 py-12">
-        <ResetPasswordForm />
+        <Suspense
+          fallback={
+            <div className="flex justify-center py-12">
+              <Loader2 className="size-10 animate-spin text-[#3B82F6]" />
+            </div>
+          }
+        >
+          <ResetPasswordContent />
+        </Suspense>
       </main>
     </div>
   );

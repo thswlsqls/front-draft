@@ -11,6 +11,18 @@ const ERROR_MESSAGES: Record<string, string> = {
   PASSWORD_POLICY_VIOLATION:
     "Password must be at least 8 characters with 2+ types (uppercase, lowercase, digit, special character).",
   INVALID_CREDENTIALS: "Incorrect email or password.",
+  BOOKMARK_NOT_FOUND: "Bookmark not found.",
+  BOOKMARK_ALREADY_EXISTS: "This content is already bookmarked.",
+  INVALID_BOOKMARK_ID: "Invalid bookmark ID format.",
+  CONTENT_NOT_FOUND: "Content not found.",
+  HISTORY_NOT_FOUND: "History not found.",
+  MESSAGE_EMPTY: "Message is required.",
+  MESSAGE_TOO_LONG: "Message cannot exceed 500 characters.",
+  SESSION_NOT_FOUND: "Session not found.",
+  TOKEN_LIMIT_EXCEEDED:
+    "Token limit exceeded. Please start a new conversation.",
+  SESSION_FORBIDDEN:
+    "You don't have permission to access this session.",
 };
 
 const HTTP_FALLBACK: Record<number, string> = {
