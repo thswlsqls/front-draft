@@ -8,6 +8,8 @@ import { DetailModal } from "@/components/emerging-tech/detail-modal";
 import { Pagination } from "@/components/emerging-tech/pagination";
 import { AuthHeader } from "@/components/auth/auth-header";
 import { fetchList, fetchSearch } from "@/lib/api";
+import { fetchBookmarks } from "@/lib/bookmark-api";
+import { useAuth } from "@/contexts/auth-context";
 import type {
   EmergingTechItem,
   TechProvider,
@@ -16,6 +18,8 @@ import type {
 } from "@/types/emerging-tech";
 
 export default function Home() {
+  const { user } = useAuth();
+
   // Data state
   const [items, setItems] = useState<EmergingTechItem[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -35,6 +39,46 @@ export default function Home() {
 
   // Modal state
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // Bookmark state: emergingTechId -> bookmarkTsid
+  const [bookmarkMap, setBookmarkMap] = useState<Map<string, string>>(
+    new Map()
+  );
+
+  // Load bookmark set for logged-in user
+  useEffect(() => {
+    if (!user) {
+      setBookmarkMap(new Map());
+      return;
+    }
+
+    fetchBookmarks({ size: 100 })
+      .then((res) => {
+        const map = new Map<string, string>();
+        for (const b of res.data.list) {
+          map.set(b.emergingTechId, b.bookmarkTsid);
+        }
+        setBookmarkMap(map);
+      })
+      .catch(() => {
+        // Silently fail - bookmarks just won't show
+      });
+  }, [user]);
+
+  const handleBookmarkToggle = useCallback(
+    (emergingTechId: string, bookmarkTsid: string | null) => {
+      setBookmarkMap((prev) => {
+        const next = new Map(prev);
+        if (bookmarkTsid) {
+          next.set(emergingTechId, bookmarkTsid);
+        } else {
+          next.delete(emergingTechId);
+        }
+        return next;
+      });
+    },
+    []
+  );
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -161,6 +205,9 @@ export default function Home() {
           items={items}
           loading={loading}
           onCardClick={setSelectedId}
+          bookmarkMap={user ? bookmarkMap : undefined}
+          onBookmarkToggle={user ? handleBookmarkToggle : undefined}
+          showBookmark={!!user}
         />
 
         {/* Pagination */}
@@ -180,6 +227,9 @@ export default function Home() {
       <DetailModal
         itemId={selectedId}
         onClose={() => setSelectedId(null)}
+        bookmarkTsid={selectedId ? (bookmarkMap.get(selectedId) ?? null) : null}
+        onBookmarkToggle={user ? handleBookmarkToggle : undefined}
+        showBookmark={!!user}
       />
     </div>
   );

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Space_Grotesk, DM_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/auth-context";
+import { ToastProvider } from "@/contexts/toast-context";
+import { ToastContainer } from "@/components/bookmark/toast";
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-geist-sans",
@@ -30,7 +32,12 @@ export default function RootLayout({
       <body
         className={`${spaceGrotesk.variable} ${dmMono.variable} font-sans antialiased`}
       >
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <ToastProvider>
+            {children}
+            <ToastContainer />
+          </ToastProvider>
+        </AuthProvider>
       </body>
     </html>
   );
