@@ -7,9 +7,19 @@ interface CardGridProps {
   items: EmergingTechItem[];
   loading: boolean;
   onCardClick: (id: string) => void;
+  bookmarkMap?: Map<string, string>;
+  onBookmarkToggle?: (emergingTechId: string, bookmarkTsid: string | null) => void;
+  showBookmark?: boolean;
 }
 
-export function CardGrid({ items, loading, onCardClick }: CardGridProps) {
+export function CardGrid({
+  items,
+  loading,
+  onCardClick,
+  bookmarkMap,
+  onBookmarkToggle,
+  showBookmark = false,
+}: CardGridProps) {
   if (loading) {
     return (
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -36,7 +46,14 @@ export function CardGrid({ items, loading, onCardClick }: CardGridProps) {
   return (
     <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
       {items.map((item) => (
-        <EmergingTechCard key={item.id} item={item} onClick={onCardClick} />
+        <EmergingTechCard
+          key={item.id}
+          item={item}
+          onClick={onCardClick}
+          bookmarkTsid={bookmarkMap?.get(item.id) ?? null}
+          onBookmarkToggle={onBookmarkToggle}
+          showBookmark={showBookmark}
+        />
       ))}
     </div>
   );

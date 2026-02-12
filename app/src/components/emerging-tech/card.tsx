@@ -7,13 +7,23 @@ import {
   UPDATE_TYPE_LABELS,
   SOURCE_TYPE_LABELS,
 } from "@/lib/constants";
+import { BookmarkToggle } from "@/components/bookmark/bookmark-toggle";
 
 interface CardProps {
   item: EmergingTechItem;
   onClick: (id: string) => void;
+  bookmarkTsid?: string | null;
+  onBookmarkToggle?: (emergingTechId: string, bookmarkTsid: string | null) => void;
+  showBookmark?: boolean;
 }
 
-export function EmergingTechCard({ item, onClick }: CardProps) {
+export function EmergingTechCard({
+  item,
+  onClick,
+  bookmarkTsid = null,
+  onBookmarkToggle,
+  showBookmark = false,
+}: CardProps) {
   const publishedDate = item.publishedAt
     ? new Date(item.publishedAt).toLocaleDateString("ko-KR", {
         year: "numeric",
@@ -54,11 +64,20 @@ export function EmergingTechCard({ item, onClick }: CardProps) {
         <span className="brutal-border bg-white px-2 py-0.5 text-xs font-semibold">
           {SOURCE_TYPE_LABELS[item.sourceType]}
         </span>
-        {publishedDate && (
-          <span className="text-xs font-medium text-gray-500">
-            {publishedDate}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {publishedDate && (
+            <span className="text-xs font-medium text-gray-500">
+              {publishedDate}
+            </span>
+          )}
+          {showBookmark && onBookmarkToggle && (
+            <BookmarkToggle
+              emergingTechId={item.id}
+              bookmarkTsid={bookmarkTsid ?? null}
+              onToggle={onBookmarkToggle}
+            />
+          )}
+        </div>
       </div>
     </article>
   );

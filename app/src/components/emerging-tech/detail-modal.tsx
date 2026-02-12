@@ -15,13 +15,23 @@ import {
   SOURCE_TYPE_LABELS,
 } from "@/lib/constants";
 import { fetchDetail } from "@/lib/api";
+import { BookmarkToggle } from "@/components/bookmark/bookmark-toggle";
 
 interface DetailModalProps {
   itemId: string | null;
   onClose: () => void;
+  bookmarkTsid?: string | null;
+  onBookmarkToggle?: (emergingTechId: string, bookmarkTsid: string | null) => void;
+  showBookmark?: boolean;
 }
 
-export function DetailModal({ itemId, onClose }: DetailModalProps) {
+export function DetailModal({
+  itemId,
+  onClose,
+  bookmarkTsid = null,
+  onBookmarkToggle,
+  showBookmark = false,
+}: DetailModalProps) {
   const [item, setItem] = useState<EmergingTechItem | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,9 +92,18 @@ export function DetailModal({ itemId, onClose }: DetailModalProps) {
                   {SOURCE_TYPE_LABELS[item.sourceType]}
                 </span>
               </div>
-              <DialogTitle className="text-xl font-bold leading-tight">
-                {item.title}
-              </DialogTitle>
+              <div className="flex items-start justify-between gap-3">
+                <DialogTitle className="text-xl font-bold leading-tight">
+                  {item.title}
+                </DialogTitle>
+                {showBookmark && onBookmarkToggle && (
+                  <BookmarkToggle
+                    emergingTechId={item.id}
+                    bookmarkTsid={bookmarkTsid ?? null}
+                    onToggle={onBookmarkToggle}
+                  />
+                )}
+              </div>
               {publishedDate && (
                 <p className="text-sm font-medium text-gray-500">
                   {publishedDate}
