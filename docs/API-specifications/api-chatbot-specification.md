@@ -100,6 +100,7 @@ AI 챗봇에게 메시지를 보내고 응답을 받습니다. 세션 ID가 없�
   "data": {
     "response": "최신 AI 기술 트렌드를 알려드리겠습니다...",
     "conversationId": "sess_abc123def456",
+    "title": null,
     "sources": [
       {
         "documentId": "doc_789xyz",
@@ -119,6 +120,7 @@ AI 챗봇에게 메시지를 보내고 응답을 받습니다. 세션 ID가 없�
 |------|------|------|------|
 | response | String | O | AI 응답 메시지 |
 | conversationId | String | O | 대화 세션 ID |
+| title | String | X | 세션 타이틀 (비동기 생성으로 null일 수 있음) |
 | sources | SourceResponse[] | X | 참조한 소스 목록 (RAG) |
 
 **SourceResponse 필드**
@@ -128,8 +130,8 @@ AI 챗봇에게 메시지를 보내고 응답을 받습니다. 세션 ID가 없�
 | documentId | String | X | 문서 ID |
 | collectionType | String | X | 컬렉션 타입 (EMERGING_TECH, NEWS 등) |
 | score | Double | X | 관련도 점수 (0~1) |
-| title | String | X | 소스 제목 (웹 검색 결과) |
-| url | String | X | 소스 URL (웹 검색 결과) |
+| title | String | X | 소스 제목 (RAG 벡터 검색, 웹 검색) |
+| url | String | X | 소스 URL (RAG 벡터 검색, 웹 검색) |
 
 **Errors**
 - `400` - 빈 메시지, 메시지 길이 초과 (500자), 토큰 한도 초과
@@ -314,7 +316,47 @@ SessionResponse 형식
 
 ---
 
-### 4.4 세션 삭제
+### 4.4 세션 타이틀 수정
+
+**PATCH** `/api/v1/chatbot/sessions/{sessionId}/title`
+
+**인증**: 필요
+
+세션의 타이틀을 수정합니다.
+
+**Path Parameters**
+
+| 파라미터 | 타입 | 필수 | 설명 |
+|----------|------|------|------|
+| sessionId | String | O | 세션 ID |
+
+**Request Body**
+
+```json
+{
+  "title": "AI 트렌드 대화"
+}
+```
+
+**UpdateSessionTitleRequest 필드**
+
+| 필드 | 타입 | 필수 | 검증 | 설명 |
+|------|------|------|------|------|
+| title | String | O | NotBlank, Max(200) | 새 세션 타이틀 (최대 200자) |
+
+**Response** (200 OK) `ApiResponse<SessionResponse>`
+
+SessionResponse 형식
+
+**Errors**
+- `400` - 빈 타이틀, 타이틀 길이 초과 (200자)
+- `401` - 인증 실패
+- `403` - 해당 세션에 접근할 권한 없음
+- `404` - 세션 없음
+
+---
+
+### 4.5 세션 삭제
 
 **DELETE** `/api/v1/chatbot/sessions/{sessionId}`
 
@@ -364,6 +406,8 @@ SessionResponse 형식
 | 세션 없음 | 4040 | 세션을 찾을 수 없습니다. |
 | 토큰 한도 초과 | 4000 | 토큰 한도를 초과했습니다. |
 | 권한 없음 | 4030 | 해당 세션에 접근할 권한이 없습니다. |
+| 빈 타이틀 | 4000 | 타이틀은 필수입니다. |
+| 타이틀 길이 초과 | 4000 | 타이틀은 200자를 초과할 수 없습니다. |
 
 ---
 
@@ -375,9 +419,10 @@ SessionResponse 형식
 | GET | `/api/v1/chatbot/sessions` | O | 세션 목록 조회 |
 | GET | `/api/v1/chatbot/sessions/{sessionId}` | O | 세션 상세 조회 |
 | GET | `/api/v1/chatbot/sessions/{sessionId}/messages` | O | 세션 메시지 목록 조회 |
+| PATCH | `/api/v1/chatbot/sessions/{sessionId}/title` | O | 세션 타이틀 수정 |
 | DELETE | `/api/v1/chatbot/sessions/{sessionId}` | O | 세션 삭제 |
 
 ---
 
-**문서 버전**: 1.0
-**최종 업데이트**: 2026-02-06
+**문서 버전**: 1.1
+**최종 업데이트**: 2026-02-13
