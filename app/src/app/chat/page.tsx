@@ -230,8 +230,26 @@ export default function ChatPage() {
 
         if (isNewSession) {
           setActiveSessionId(res.conversationId);
-          // Reload sessions to get the new session in the list
+          // Optimistically add the new session to the sidebar
+          const newSession: SessionResponse = {
+            sessionId: res.conversationId,
+            title: res.title,
+            createdAt: new Date().toISOString(),
+            lastMessageAt: new Date().toISOString(),
+            isActive: true,
+          };
+          setSessions((prev) => [newSession, ...prev]);
+          // Also reload sessions in background to reconcile with server data
           loadSessions();
+        } else if (res.title) {
+          // For existing sessions, update title if returned
+          setSessions((prev) =>
+            prev.map((s) =>
+              s.sessionId === res.conversationId
+                ? { ...s, title: res.title }
+                : s
+            )
+          );
         }
 
         // Add assistant response

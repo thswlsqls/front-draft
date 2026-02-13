@@ -59,6 +59,20 @@ export async function fetchSessionMessages(
   return parseResponse<SpringDataPage<MessageResponse>>(res);
 }
 
+export async function updateSessionTitle(
+  sessionId: string,
+  title: string
+): Promise<SessionResponse> {
+  const res = await authFetch(
+    `${BASE}/sessions/${encodeURIComponent(sessionId)}/title`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ title }),
+    }
+  );
+  return parseResponse<SessionResponse>(res);
+}
+
 export async function deleteSession(sessionId: string): Promise<void> {
   const res = await authFetch(
     `${BASE}/sessions/${encodeURIComponent(sessionId)}`,
