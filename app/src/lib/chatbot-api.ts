@@ -3,8 +3,8 @@ import type {
   ChatRequest,
   ChatResponse,
   SessionResponse,
-  MessageResponse,
-  SpringDataPage,
+  SessionListResponse,
+  MessageListResponse,
   SessionListParams,
   MessageListParams,
 } from "@/types/chatbot";
@@ -35,9 +35,9 @@ export async function sendMessage(
 
 export async function fetchSessions(
   params: SessionListParams = {}
-): Promise<SpringDataPage<SessionResponse>> {
+): Promise<SessionListResponse> {
   const res = await authFetch(`${BASE}/sessions${toQuery(params)}`);
-  return parseResponse<SpringDataPage<SessionResponse>>(res);
+  return parseResponse<SessionListResponse>(res);
 }
 
 export async function fetchSessionDetail(
@@ -52,11 +52,11 @@ export async function fetchSessionDetail(
 export async function fetchSessionMessages(
   sessionId: string,
   params: MessageListParams = {}
-): Promise<SpringDataPage<MessageResponse>> {
+): Promise<MessageListResponse> {
   const res = await authFetch(
     `${BASE}/sessions/${encodeURIComponent(sessionId)}/messages${toQuery(params)}`
   );
-  return parseResponse<SpringDataPage<MessageResponse>>(res);
+  return parseResponse<MessageListResponse>(res);
 }
 
 export async function updateSessionTitle(

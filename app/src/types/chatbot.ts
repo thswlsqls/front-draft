@@ -1,3 +1,7 @@
+import type { PageData } from "@/types/common";
+
+export type { PageData };
+
 export interface ChatRequest {
   message: string;
   conversationId?: string;
@@ -36,24 +40,12 @@ export interface MessageResponse {
   createdAt: string;
 }
 
-export interface SpringDataPage<T> {
-  content: T[];
-  pageable: {
-    pageNumber: number;
-    pageSize: number;
-    sort?: {
-      sorted: boolean;
-      direction: string;
-      property: string;
-    };
-  };
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
-  first: boolean;
-  last: boolean;
-  empty: boolean;
+export interface SessionListResponse {
+  data: PageData<SessionResponse>;
+}
+
+export interface MessageListResponse {
+  data: PageData<MessageResponse>;
 }
 
 export interface SessionListParams {

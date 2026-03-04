@@ -1,3 +1,7 @@
+import type { PageData } from "@/types/common";
+
+export type { PageData };
+
 export interface BookmarkDetailResponse {
   bookmarkTsid: string;
   userId: string;
@@ -24,14 +28,6 @@ export interface BookmarkCreateRequest {
 export interface BookmarkUpdateRequest {
   tags?: string[];
   memo?: string;
-}
-
-export interface PageData<T> {
-  pageSize: number;
-  pageNumber: number;
-  totalPageNumber: number;
-  totalSize: number;
-  list: T[];
 }
 
 export interface BookmarkListResponse {

@@ -1,6 +1,7 @@
 "use client";
 
-import { Loader2, Plus, X } from "lucide-react";
+import { useState } from "react";
+import { Check, Loader2, Pencil, Plus, X } from "lucide-react";
 import type { SessionResponse } from "@/types/chatbot";
 
 function formatRelativeTime(iso: string): string {
@@ -30,6 +31,7 @@ interface Props {
   onNewChat: () => void;
   onDeleteSession: (sessionId: string) => void;
   onLoadMore: () => void;
+  onEditTitle: (sessionId: string, newTitle: string) => void;
 }
 
 export function ChatSidebar({
@@ -41,7 +43,40 @@ export function ChatSidebar({
   onNewChat,
   onDeleteSession,
   onLoadMore,
+  onEditTitle,
 }: Props) {
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
+
+  const startEditing = (session: SessionResponse) => {
+    setEditingSessionId(session.sessionId);
+    setEditingTitle(session.title || "");
+  };
+
+  const cancelEdit = () => {
+    setEditingSessionId(null);
+    setEditingTitle("");
+  };
+
+  const saveEdit = () => {
+    const trimmed = editingTitle.trim();
+    if (!trimmed || !editingSessionId) {
+      cancelEdit();
+      return;
+    }
+
+    const currentTitle = sessions.find(
+      (s) => s.sessionId === editingSessionId
+    )?.title;
+    if (trimmed === currentTitle) {
+      cancelEdit();
+      return;
+    }
+
+    onEditTitle(editingSessionId, trimmed);
+    cancelEdit();
+  };
+
   return (
     <aside
       className="w-72 border-r-2 border-black bg-white flex flex-col h-full"
@@ -67,47 +102,118 @@ export function ChatSidebar({
             No conversations yet.
           </p>
         ) : (
-          sessions.map((session) => (
-            <div
-              key={session.sessionId}
-              role="button"
-              tabIndex={0}
-              aria-label={`${session.title || "Untitled"}, ${session.lastMessageAt ? formatRelativeTime(session.lastMessageAt) : ""}`}
-              onClick={() => onSelectSession(session.sessionId)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") onSelectSession(session.sessionId);
-              }}
-              className={`border-b-2 border-black px-4 py-3 cursor-pointer transition-colors group ${
-                activeSessionId === session.sessionId
-                  ? "bg-accent"
-                  : "hover:bg-accent"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold truncate">
-                    {session.title || "Untitled"}
-                  </p>
-                  {session.lastMessageAt && (
-                    <p className="font-mono text-xs text-muted-foreground mt-0.5">
-                      {formatRelativeTime(session.lastMessageAt)}
-                    </p>
+          sessions.map((session) => {
+            const isEditing = editingSessionId === session.sessionId;
+            const displayTitle = session.title || "New Chat";
+
+            return (
+              <div
+                key={session.sessionId}
+                role="button"
+                tabIndex={0}
+                aria-label={`${displayTitle}, ${session.lastMessageAt ? formatRelativeTime(session.lastMessageAt) : ""}`}
+                onClick={() => {
+                  if (!isEditing) onSelectSession(session.sessionId);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !isEditing)
+                    onSelectSession(session.sessionId);
+                }}
+                className={`border-b-2 border-black px-4 py-3 cursor-pointer transition-colors group ${
+                  activeSessionId === session.sessionId
+                    ? "bg-accent"
+                    : "hover:bg-accent"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={editingTitle}
+                        onChange={(e) => setEditingTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") saveEdit();
+                          if (e.key === "Escape") cancelEdit();
+                        }}
+                        onBlur={cancelEdit}
+                        maxLength={200}
+                        autoFocus
+                        aria-label="Edit session title"
+                        className="text-sm font-bold w-full bg-white border-2 border-black px-1 py-0 outline-none"
+                      />
+                    ) : (
+                      <p
+                        className={`text-sm font-bold truncate ${
+                          !session.title
+                            ? "italic text-muted-foreground"
+                            : ""
+                        }`}
+                        title={displayTitle}
+                      >
+                        {displayTitle}
+                      </p>
+                    )}
+                    {session.lastMessageAt && (
+                      <p className="font-mono text-xs text-muted-foreground mt-0.5">
+                        {formatRelativeTime(session.lastMessageAt)}
+                      </p>
+                    )}
+                  </div>
+
+                  {isEditing ? (
+                    <>
+                      <button
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          saveEdit();
+                        }}
+                        aria-label="Save title"
+                        className="p-1 hover:text-primary transition-all shrink-0"
+                      >
+                        <Check className="size-4" />
+                      </button>
+                      <button
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          cancelEdit();
+                        }}
+                        aria-label="Cancel editing"
+                        className="p-1 hover:text-destructive transition-all shrink-0"
+                      >
+                        <X className="size-4" />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          startEditing(session);
+                        }}
+                        aria-label="Edit conversation title"
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:text-primary transition-all shrink-0"
+                      >
+                        <Pencil className="size-3.5" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteSession(session.sessionId);
+                        }}
+                        aria-label="Delete conversation"
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:text-destructive transition-all shrink-0"
+                      >
+                        <X className="size-4" />
+                      </button>
+                    </>
                   )}
                 </div>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteSession(session.sessionId);
-                  }}
-                  aria-label="Delete conversation"
-                  className="opacity-0 group-hover:opacity-100 p-1 hover:text-destructive transition-all shrink-0"
-                >
-                  <X className="size-4" />
-                </button>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
 
         {isLoading && (

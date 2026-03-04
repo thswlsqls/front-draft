@@ -15,11 +15,12 @@ import {
   sendMessage,
   fetchSessions,
   fetchSessionMessages,
+  updateSessionTitle,
 } from "@/lib/chatbot-api";
 import { AuthError } from "@/lib/auth-fetch";
 import type {
   SessionResponse,
-  SpringDataPage,
+  SessionListResponse,
 } from "@/types/chatbot";
 
 let tempIdCounter = 0;
@@ -32,7 +33,7 @@ export default function ChatPage() {
   // Session state
   const [sessions, setSessions] = useState<SessionResponse[]>([]);
   const [sessionsPageMeta, setSessionsPageMeta] =
-    useState<SpringDataPage<SessionResponse> | null>(null);
+    useState<SessionListResponse | null>(null);
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
 
@@ -73,7 +74,7 @@ export default function ChatPage() {
       try {
         const data = await fetchSessions({ page, size: 20 });
         setSessions((prev) =>
-          append ? [...prev, ...data.content] : data.content
+          append ? [...prev, ...data.data.list] : data.data.list
         );
         setSessionsPageMeta(data);
       } catch {
@@ -112,9 +113,9 @@ export default function ChatPage() {
           // Guard against stale response
           if (!prepend && loadingSessionRef.current !== sessionId) return;
 
-          if (meta.totalPages <= 1) {
+          if (meta.data.totalPageNumber <= 1) {
             // Single page — use data directly
-            const displayMessages: DisplayMessage[] = meta.content.map(
+            const displayMessages: DisplayMessage[] = meta.data.list.map(
               (msg) => ({
                 id: msg.messageId,
                 role: msg.role,
@@ -128,7 +129,7 @@ export default function ChatPage() {
             setConversationId(sessionId);
             return;
           }
-          targetPage = meta.totalPages;
+          targetPage = meta.data.totalPageNumber;
         }
 
         const data = await fetchSessionMessages(sessionId, {
@@ -139,7 +140,7 @@ export default function ChatPage() {
         // Guard against stale response (race condition)
         if (!prepend && loadingSessionRef.current !== sessionId) return;
 
-        const displayMessages: DisplayMessage[] = data.content.map((msg) => ({
+        const displayMessages: DisplayMessage[] = data.data.list.map((msg) => ({
           id: msg.messageId,
           role: msg.role,
           content: msg.content,
@@ -152,9 +153,8 @@ export default function ChatPage() {
           setMessages(displayMessages);
         }
 
-        // Track current page in API 1-based terms
-        setMessagesCurrentPage(data.number + 1);
-        setHasOlderMessages(!data.first);
+        setMessagesCurrentPage(data.data.pageNumber);
+        setHasOlderMessages(data.data.pageNumber > 1);
         setConversationId(sessionId);
       } catch (err) {
         if (!prepend && loadingSessionRef.current !== sessionId) return;
@@ -317,8 +317,8 @@ export default function ChatPage() {
 
   // Load more sessions
   const handleLoadMoreSessions = useCallback(() => {
-    if (!sessionsPageMeta || sessionsPageMeta.last) return;
-    const nextPage = sessionsPageMeta.number + 2; // number is 0-based, API page is 1-based
+    if (!sessionsPageMeta || sessionsPageMeta.data.pageNumber >= sessionsPageMeta.data.totalPageNumber) return;
+    const nextPage = sessionsPageMeta.data.pageNumber + 1;
     loadSessions(nextPage, true);
   }, [sessionsPageMeta, loadSessions]);
 
@@ -336,6 +336,37 @@ export default function ChatPage() {
       setDeleteSessionId(null);
     },
     [activeSessionId, handleNewChat]
+  );
+
+  // Edit session title (optimistic UI)
+  const handleEditTitle = useCallback(
+    async (sessionId: string, newTitle: string) => {
+      const prevTitle = sessions.find(
+        (s) => s.sessionId === sessionId
+      )?.title;
+
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.sessionId === sessionId ? { ...s, title: newTitle } : s
+        )
+      );
+
+      try {
+        await updateSessionTitle(sessionId, newTitle);
+      } catch (err) {
+        setSessions((prev) =>
+          prev.map((s) =>
+            s.sessionId === sessionId ? { ...s, title: prevTitle } : s
+          )
+        );
+        if (err instanceof AuthError) {
+          showToast(err.message, "error");
+        } else {
+          showToast("Failed to update title. Please try again.", "error");
+        }
+      }
+    },
+    [sessions, showToast]
   );
 
   // Handle example question click from empty state
@@ -379,11 +410,12 @@ export default function ChatPage() {
           sessions={sessions}
           activeSessionId={activeSessionId}
           isLoading={isLoadingSessions}
-          hasMore={sessionsPageMeta ? !sessionsPageMeta.last : false}
+          hasMore={sessionsPageMeta ? sessionsPageMeta.data.pageNumber < sessionsPageMeta.data.totalPageNumber : false}
           onSelectSession={handleSelectSession}
           onNewChat={handleNewChat}
           onDeleteSession={(id) => setDeleteSessionId(id)}
           onLoadMore={handleLoadMoreSessions}
+          onEditTitle={handleEditTitle}
         />
 
         {/* Chat area */}
