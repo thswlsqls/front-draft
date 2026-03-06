@@ -16,7 +16,7 @@ export async function adminLogin(
 }
 
 export async function logout(refreshToken: string): Promise<void> {
-  const res = await authFetch(`${BASE}/logout`, {
+  const res = await authFetch(`${BASE}/admin/logout`, {
     method: "POST",
     body: JSON.stringify({ refreshToken }),
   });

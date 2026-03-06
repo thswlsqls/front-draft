@@ -17,14 +17,9 @@ interface AccountsTableProps {
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return "Never";
   const d = new Date(dateStr);
-  return d.toLocaleString("en-CA", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
+  const date = d.toLocaleDateString("en-CA"); // YYYY-MM-DD
+  const time = d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }); // HH:mm
+  return `${date} ${time}`;
 }
 
 function SkeletonRows() {

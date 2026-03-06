@@ -24,7 +24,8 @@ export default function SigninPage() {
             href="/"
             className="text-2xl font-bold tracking-tight md:text-3xl"
           >
-            Admin <span className="text-[#3B82F6]">App</span>
+            Tech <span className="text-[#3B82F6]">N</span> AI
+            <span className="ml-1 text-[#3B82F6]">[Admin]</span>
           </Link>
         </div>
       </header>

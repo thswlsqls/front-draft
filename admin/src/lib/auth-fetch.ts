@@ -5,7 +5,9 @@ const ERROR_MESSAGES: Record<string, string> = {
   AUTH_REQUIRED: "Authentication required. Please sign in.",
   FORBIDDEN: "You don't have permission to perform this action.",
   NOT_FOUND: "Admin account not found.",
+  CONFLICT: "A conflict occurred. Please try again.",
   VALIDATION_ERROR: "Validation failed. Please check your input.",
+  BAD_REQUEST: "Invalid request. Please check your input.",
   INVALID_TOKEN: "Invalid token.",
   TOKEN_EXPIRED: "Token has expired.",
 };
@@ -16,6 +18,7 @@ const HTTP_FALLBACK: Record<number, string> = {
   403: "You don't have permission to perform this action.",
   404: "Resource not found.",
   409: "Conflict. This resource already exists.",
+  429: "Too many requests. Please try again later.",
   500: "Something went wrong. Please try again later.",
 };
 
@@ -120,7 +123,7 @@ async function refreshAccessToken(): Promise<TokenResponse> {
     const refreshToken = localStorage.getItem("refreshToken");
     if (!refreshToken) throw new Error("No refresh token");
 
-    const res = await fetch("/api/v1/auth/refresh", {
+    const res = await fetch("/api/v1/auth/admin/refresh", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refreshToken }),

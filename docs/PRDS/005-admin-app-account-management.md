@@ -66,8 +66,8 @@ interface ApiResponse<T> {
 | 4 | GET | `/api/v1/auth/admin/accounts/{adminId}` | O (ADMIN) | 관리자 상세 조회 |
 | 5 | PUT | `/api/v1/auth/admin/accounts/{adminId}` | O (ADMIN) | 관리자 정보 수정 |
 | 6 | DELETE | `/api/v1/auth/admin/accounts/{adminId}` | O (ADMIN) | 관리자 계정 삭제 |
-| 7 | POST | `/api/v1/auth/refresh` | X | 토큰 갱신 |
-| 8 | POST | `/api/v1/auth/logout` | O | 로그아웃 |
+| 7 | POST | `/api/v1/auth/admin/refresh` | X | 관리자 토큰 갱신 |
+| 8 | POST | `/api/v1/auth/admin/logout` | O (ADMIN) | 관리자 로그아웃 |
 
 ### 2.3 요청/응답 상세
 
@@ -91,13 +91,22 @@ interface ApiResponse<T> {
     "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "refreshToken": "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4...",
     "tokenType": "Bearer",
-    "expiresIn": 3600,
-    "refreshTokenExpiresIn": 604800
+    "expiresIn": 900,
+    "refreshTokenExpiresIn": 86400
   }
 }
 ```
 
-**Errors**: `401` (이메일/비밀번호 불일치, 비활성화/삭제된 관리자 계정)
+**계정 잠금 정책**:
+
+| 연속 실패 횟수 | 잠금 시간 |
+|--------------|----------|
+| 5회 이상 | 15분 |
+| 10회 이상 | 1시간 |
+
+> 로그인 성공 시 실패 횟수가 초기화됩니다.
+
+**Errors**: `401` (이메일/비밀번호 불일치, 비활성화/삭제된 관리자 계정, 계정 잠금 상태)
 
 #### Create Admin Account (POST `/api/v1/auth/admin/accounts`)
 
@@ -152,21 +161,23 @@ interface ApiResponse<T> {
 
 **Errors**: `401` (인증 실패), `403` (권한 없음, 자기 자신 삭제 시도), `404` (관리자 없음)
 
-#### Refresh Token (POST `/api/v1/auth/refresh`)
+#### Admin Refresh Token (POST `/api/v1/auth/admin/refresh`)
+
+관리자 리프레시 토큰으로 새 액세스 토큰을 발급받습니다. 사용자(USER) 역할의 토큰은 사용할 수 없습니다.
 
 **Request Body (RefreshTokenRequest)**
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| refreshToken | String | O | 리프레시 토큰 |
+| refreshToken | String | O | 관리자 리프레시 토큰 |
 
-**Response**: `ApiResponse<TokenResponse>`
+**Response**: `ApiResponse<TokenResponse>` (관리자 토큰: Access 900초, Refresh 86400초)
 
-**Errors**: `401` (Refresh Token 만료 또는 무효)
+**Errors**: `401` (Refresh Token 만료 또는 무효, 사용자 토큰 사용 시도, 비활성화된 관리자 계정, 관리자 ID 불일치)
 
-#### Logout (POST `/api/v1/auth/logout`)
+#### Admin Logout (POST `/api/v1/auth/admin/logout`)
 
-**Request Headers**: `Authorization: Bearer {accessToken}`
+**Request Headers**: `Authorization: Bearer {accessToken}` (ADMIN)
 
 **Request Body (LogoutRequest)**
 
@@ -176,7 +187,7 @@ interface ApiResponse<T> {
 
 **Response**: `ApiResponse<Void>`
 
-**Errors**: `401` (인증 실패)
+**Errors**: `401` (인증 실패, Refresh Token 불일치, 관리자 ID 불일치)
 
 ### 2.4 공통 응답 모델
 
@@ -212,7 +223,9 @@ API `messageCode.code` → 프론트엔드 영문 메시지:
 | AUTH_REQUIRED | Authentication required. Please sign in. |
 | FORBIDDEN | You don't have permission to perform this action. |
 | NOT_FOUND | Admin account not found. |
+| CONFLICT | A conflict occurred. Please try again. |
 | VALIDATION_ERROR | Validation failed. Please check your input. |
+| BAD_REQUEST | Invalid request. Please check your input. |
 
 HTTP fallback 메시지:
 
@@ -222,6 +235,7 @@ HTTP fallback 메시지:
 | 401 | Authentication failed. Please sign in again. |
 | 403 | You don't have permission to perform this action. |
 | 404 | Resource not found. |
+| 429 | Too many requests. Please try again later. |
 | 500 | Something went wrong. Please try again later. |
 
 ---
@@ -275,9 +289,8 @@ HTTP fallback 메시지:
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │  Header                                                      │
-│  ┌──────────────┐              {username} [Logout]           │
-│  │ Admin App    │   [Accounts]                               │
-│  └──────────────┘                                            │
+│  🛡 Tech N AI [Admin]            {username} [Logout]        │
+│                        [Accounts]                            │
 ├──────────────────────────────────────────────────────────────┤
 │                                                              │
 │  ┌──────────────────────────────────────────────────────────┐│
@@ -301,9 +314,8 @@ HTTP fallback 메시지:
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │  Header                                                      │
-│  ┌──────────────┐              {username} [Logout]           │
-│  │ Admin App    │   [Accounts]                               │
-│  └──────────────┘                                            │
+│  🛡 Tech N AI [Admin]            {username} [Logout]        │
+│                        [Accounts]                            │
 ├──────────────────────────────────────────────────────────────┤
 │                                                              │
 │  ┌──────────────────────────────────────────────────────────┐│
@@ -350,9 +362,9 @@ HTTP fallback 메시지:
 앱 전역에 사용되는 헤더 컴포넌트 (대시보드, 계정 관리 페이지).
 
 **구성 요소**:
-- 좌측: "Admin App" 앱 타이틀 (클릭 시 `/`로 이동)
+- 좌측: "Tech N AI [Admin]" 앱 타이틀 (ShieldCheck 아이콘 + 텍스트 + Admin 뱃지, 클릭 시 `/`로 이동)
 - 중앙: 네비게이션 링크 — "Accounts" (`/accounts`)
-- 우측: 로그인된 관리자 username 표시 + "Logout" 버튼
+- 우측: 로그인된 관리자 username 표시 + "Logout" 버튼 (LogOut 아이콘)
 
 **네비게이션 활성 상태**: 현재 경로와 일치하는 링크에 `text-[#3B82F6] font-bold` 적용
 
@@ -380,6 +392,7 @@ HTTP fallback 메시지:
 5. 실패 시: 에러 메시지를 폼 하단에 인라인 표시
    - `401`: "Invalid email or password."
    - 비활성화/삭제된 계정: "This account has been deactivated."
+   - 계정 잠금 상태: "Account is locked. Please try again later."
 
 **제출 상태**: 폼 제출 중 "Sign In" 버튼 비활성화 + 로딩 인디케이터 표시
 
@@ -588,7 +601,7 @@ HTTP fallback 메시지:
 
 | Action | Success Message | Error Message |
 |--------|----------------|---------------|
-| Login | — (redirect) | "Invalid email or password." |
+| Login | — (redirect) | "Invalid email or password." / "This account has been deactivated." / "Account is locked. Please try again later." |
 | Create account | "Account created successfully." | "Failed to create account." |
 | Update account | "Account updated successfully." | "Failed to update account." |
 | Delete account | "Account deleted successfully." | "Failed to delete account." / "Cannot delete your own account." |
@@ -875,11 +888,11 @@ export async function adminLogin(email: string, password: string): Promise<Token
 }
 
 export async function logout(refreshToken: string): Promise<void> {
-  // authFetch + parseVoidResponse
+  // authFetch로 POST /api/v1/auth/admin/logout 호출 + parseVoidResponse
 }
 
 export async function refreshAccessToken(refreshToken: string): Promise<TokenResponse> {
-  const res = await fetch(`${BASE}/refresh`, {
+  const res = await fetch(`${BASE}/admin/refresh`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ refreshToken }),
@@ -1011,5 +1024,5 @@ npm run dev
 
 ---
 
-**문서 버전**: 1.0
-**최종 업데이트**: 2026-03-04
+**문서 버전**: 1.1
+**최종 업데이트**: 2026-03-05

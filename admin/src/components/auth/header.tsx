@@ -27,9 +27,7 @@ export function Header() {
             <ShieldCheck className="size-6 text-[#3B82F6] md:size-7" strokeWidth={2.5} />
             <span>
               Tech <span className="text-[#3B82F6]">N</span> AI
-              <span className="ml-2 inline-flex items-center rounded-md border-2 border-black bg-[#3B82F6] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-white md:text-xs">
-                Admin
-              </span>
+              <span className="ml-1 text-[#3B82F6]">[Admin]</span>
             </span>
           </Link>
 

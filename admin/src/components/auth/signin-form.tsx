@@ -59,7 +59,19 @@ export function SigninForm() {
       router.push("/");
     } catch (err) {
       if (err instanceof AuthError) {
-        setServerError(err.message);
+        const msg = (err.serverMessage ?? "").toLowerCase();
+        if (msg.includes("lock") || msg.includes("잠금")) {
+          setServerError("Account is locked. Please try again later.");
+        } else if (
+          msg.includes("deactivat") ||
+          msg.includes("비활성") ||
+          msg.includes("delet") ||
+          msg.includes("삭제")
+        ) {
+          setServerError("This account has been deactivated.");
+        } else {
+          setServerError(err.message);
+        }
       } else {
         setServerError("Something went wrong. Please try again later.");
       }
@@ -71,15 +83,6 @@ export function SigninForm() {
   return (
     <div className="brutal-border-3 brutal-shadow-lg bg-white p-8">
       <h2 className="mb-6 text-2xl font-bold tracking-tight">Admin Login</h2>
-
-      {serverError && (
-        <div
-          className="mb-6 border-2 border-[#EF4444] bg-red-50 p-4 text-sm text-[#EF4444]"
-          aria-live="polite"
-        >
-          {serverError}
-        </div>
-      )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
@@ -146,6 +149,15 @@ export function SigninForm() {
             "Sign In"
           )}
         </button>
+
+        {serverError && (
+          <div
+            className="border-2 border-[#EF4444] bg-red-50 p-4 text-sm text-[#EF4444]"
+            aria-live="polite"
+          >
+            {serverError}
+          </div>
+        )}
       </form>
     </div>
   );
