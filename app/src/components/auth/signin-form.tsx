@@ -56,8 +56,8 @@ export function SigninForm() {
 
     setLoading(true);
     try {
-      const tokens = await login({ email, password });
-      auth.login(tokens);
+      const { user } = await login({ email, password });
+      auth.login(user);
       router.push("/");
     } catch (err) {
       if (err instanceof AuthError) {

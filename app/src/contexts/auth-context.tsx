@@ -8,14 +8,12 @@ import {
   useMemo,
   useState,
 } from "react";
-import type { AuthUser, TokenResponse } from "@/types/auth";
-import { logout as logoutApi } from "@/lib/auth-api";
-import { clearTokens } from "@/lib/auth-fetch";
+import type { AuthUser } from "@/types/auth";
 
 interface AuthContextValue {
   user: AuthUser | null;
   isLoading: boolean;
-  login: (tokens: TokenResponse, user?: AuthUser) => void;
+  login: (user: AuthUser) => void;
   logout: () => Promise<void>;
 }
 
@@ -25,62 +23,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Restore auth state from HttpOnly cookie via BFF
   useEffect(() => {
-    const accessToken = localStorage.getItem("accessToken");
-    if (accessToken) {
-      const stored = localStorage.getItem("user");
-      if (stored) {
-        try {
-          setUser(JSON.parse(stored));
-        } catch {
-          clearTokens();
+    fetch("/api/bff/auth/me")
+      .then((res) => {
+        if (res.ok) return res.json();
+        return null;
+      })
+      .then((json) => {
+        if (json?.data) {
+          setUser(json.data);
         }
-      }
-    }
-    setIsLoading(false);
+      })
+      .catch(() => {
+        // Not authenticated
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }, []);
 
-  const login = useCallback(
-    (tokens: TokenResponse, userInfo?: AuthUser) => {
-      localStorage.setItem("accessToken", tokens.accessToken);
-      localStorage.setItem("refreshToken", tokens.refreshToken);
-
-      if (userInfo) {
-        localStorage.setItem("user", JSON.stringify(userInfo));
-        setUser(userInfo);
-      } else {
-        // Decode user info from JWT payload
-        try {
-          const payload = JSON.parse(
-            atob(tokens.accessToken.split(".")[1])
-          );
-          const u: AuthUser = {
-            username: payload.username || payload.sub || "",
-            email: payload.email || payload.sub || "",
-          };
-          localStorage.setItem("user", JSON.stringify(u));
-          setUser(u);
-        } catch {
-          // Fallback: set minimal user
-          const u: AuthUser = { username: "", email: "" };
-          localStorage.setItem("user", JSON.stringify(u));
-          setUser(u);
-        }
-      }
-    },
-    []
-  );
+  const login = useCallback((userInfo: AuthUser) => {
+    setUser(userInfo);
+  }, []);
 
   const logout = useCallback(async () => {
-    const refreshToken = localStorage.getItem("refreshToken");
-    if (refreshToken) {
-      try {
-        await logoutApi(refreshToken);
-      } catch {
-        // Ignore logout API errors, still clear local state
-      }
+    try {
+      await fetch("/api/bff/auth/logout", { method: "POST" });
+    } catch {
+      // Ignore logout API errors
     }
-    clearTokens();
     setUser(null);
   }, []);
 

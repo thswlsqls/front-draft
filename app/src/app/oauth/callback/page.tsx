@@ -24,8 +24,8 @@ function OAuthCallbackContent() {
     }
 
     oauthCallback("google", code, state)
-      .then((tokens) => {
-        auth.login(tokens);
+      .then(({ user }) => {
+        auth.login(user);
         router.push("/");
       })
       .catch((err) => {

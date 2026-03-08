@@ -1,24 +1,42 @@
-import type { TokenResponse } from "@/types/auth";
-import { authFetch, parseResponse, parseVoidResponse } from "@/lib/auth-fetch";
+import type { AdminUser } from "@/types/auth";
+import {
+  authFetch,
+  parseVoidResponse,
+  AuthError,
+  getErrorMessage,
+} from "@/lib/auth-fetch";
 
-const BASE = "/api/v1/auth";
+const BFF_BASE = "/api/bff/auth";
 
+/**
+ * Admin login via BFF — tokens are stored in HttpOnly cookies server-side.
+ * Returns user info only (no tokens exposed to client).
+ */
 export async function adminLogin(
   email: string,
   password: string
-): Promise<TokenResponse> {
-  const res = await fetch(`${BASE}/admin/login`, {
+): Promise<{ user: AdminUser }> {
+  const res = await fetch(`${BFF_BASE}/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
-  return parseResponse<TokenResponse>(res);
+
+  const json = await res.json();
+
+  if (!res.ok) {
+    throw new AuthError(
+      getErrorMessage(json.messageCode?.code, res.status),
+      res.status,
+      json.messageCode?.code,
+      json.message || json.messageCode?.text
+    );
+  }
+
+  return json.data;
 }
 
-export async function logout(refreshToken: string): Promise<void> {
-  const res = await authFetch(`${BASE}/admin/logout`, {
-    method: "POST",
-    body: JSON.stringify({ refreshToken }),
-  });
+export async function logout(): Promise<void> {
+  const res = await authFetch(`${BFF_BASE}/logout`, { method: "POST" });
   return parseVoidResponse(res);
 }

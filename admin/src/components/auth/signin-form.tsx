@@ -54,8 +54,8 @@ export function SigninForm() {
 
     setLoading(true);
     try {
-      const tokens = await adminLogin(email, password);
-      auth.login(tokens);
+      const { user } = await adminLogin(email, password);
+      auth.login(user);
       router.push("/");
     } catch (err) {
       if (err instanceof AuthError) {

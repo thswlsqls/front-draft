@@ -6,7 +6,7 @@ import { Loader2 } from "lucide-react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { withdraw } from "@/lib/auth-api";
 import { useAuth } from "@/contexts/auth-context";
-import { clearTokens, AuthError } from "@/lib/auth-fetch";
+import { AuthError } from "@/lib/auth-fetch";
 
 interface Props {
   open: boolean;
@@ -31,8 +31,7 @@ export function DeleteAccountDialog({ open, onOpenChange }: Props) {
         password: password || undefined,
         reason: reason || undefined,
       });
-      clearTokens();
-      // Force context update by calling logout without API call (already deleted)
+      // Clear auth state (BFF logout clears HttpOnly cookies)
       await logout();
       onOpenChange(false);
       router.push("/");

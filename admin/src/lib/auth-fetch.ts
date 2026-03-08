@@ -1,5 +1,3 @@
-import type { TokenResponse } from "@/types/auth";
-
 const ERROR_MESSAGES: Record<string, string> = {
   AUTH_FAILED: "Invalid email or password.",
   AUTH_REQUIRED: "Authentication required. Please sign in.",
@@ -85,31 +83,35 @@ export async function parseVoidResponse(res: Response): Promise<void> {
 }
 
 // Token refresh singleton to prevent concurrent refresh calls
-let refreshPromise: Promise<TokenResponse> | null = null;
+let refreshPromise: Promise<boolean> | null = null;
 
+/**
+ * Authenticated fetch wrapper.
+ * Authorization header is injected by Next.js middleware from HttpOnly cookie.
+ * Handles 401 by calling BFF refresh endpoint, then retrying.
+ */
 export async function authFetch(
   url: string,
   options: RequestInit = {}
 ): Promise<Response> {
-  const accessToken = localStorage.getItem("accessToken");
-
   const headers = new Headers(options.headers);
-  if (accessToken) {
-    headers.set("Authorization", `Bearer ${accessToken}`);
-  }
   if (!headers.has("Content-Type") && options.body) {
     headers.set("Content-Type", "application/json");
   }
 
   let res = await fetch(url, { ...options, headers });
 
-  if (res.status === 401 && accessToken) {
+  if (res.status === 401) {
     try {
-      const tokens = await refreshAccessToken();
-      headers.set("Authorization", `Bearer ${tokens.accessToken}`);
-      res = await fetch(url, { ...options, headers });
-    } catch {
-      clearTokens();
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        res = await fetch(url, { ...options, headers });
+      } else {
+        window.location.href = "/signin";
+        throw new AuthError("Session expired. Please sign in again.", 401);
+      }
+    } catch (err) {
+      if (err instanceof AuthError) throw err;
       window.location.href = "/signin";
       throw new AuthError("Session expired. Please sign in again.", 401);
     }
@@ -118,28 +120,12 @@ export async function authFetch(
   return res;
 }
 
-async function refreshAccessToken(): Promise<TokenResponse> {
+async function refreshAccessToken(): Promise<boolean> {
   if (refreshPromise) return refreshPromise;
 
   refreshPromise = (async () => {
-    const refreshToken = localStorage.getItem("refreshToken");
-    if (!refreshToken) throw new Error("No refresh token");
-
-    const res = await fetch("/api/v1/auth/admin/refresh", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken }),
-    });
-
-    const json: ApiResponseShape<TokenResponse> = await res.json();
-
-    if (!res.ok || !json.data) {
-      throw new Error("Token refresh failed");
-    }
-
-    localStorage.setItem("accessToken", json.data.accessToken);
-    localStorage.setItem("refreshToken", json.data.refreshToken);
-    return json.data;
+    const res = await fetch("/api/bff/auth/refresh", { method: "POST" });
+    return res.ok;
   })();
 
   try {
@@ -147,10 +133,4 @@ async function refreshAccessToken(): Promise<TokenResponse> {
   } finally {
     refreshPromise = null;
   }
-}
-
-export function clearTokens() {
-  localStorage.removeItem("accessToken");
-  localStorage.removeItem("refreshToken");
-  localStorage.removeItem("user");
 }
