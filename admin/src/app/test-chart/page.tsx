@@ -1,5 +1,6 @@
 "use client";
 
+import { PieChart, Pie, Tooltip, Legend } from "recharts";
 import { AgentChart } from "@/components/agent/agent-chart";
 import type { ChartData } from "@/types/agent";
 
@@ -15,23 +16,43 @@ const testChart: ChartData = {
   ],
 };
 
+// Minimal raw data with fill embedded — bypasses AgentChart entirely
+const rawData = [
+  { name: "OPENAI", value: 130, fill: "#3B82F6" },
+  { name: "ANTHROPIC", value: 76, fill: "#EF4444" },
+  { name: "GOOGLE", value: 65, fill: "#10B981" },
+  { name: "META", value: 32, fill: "#F59E0B" },
+];
+
 export default function TestChartPage() {
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
-      <h1 style={{ padding: 16 }}>Test 1: Standalone</h1>
-      <AgentChart data={testChart} />
-
-      <h1 style={{ padding: 16 }}>Test 2: Inside absolute+overflow container (same as agent)</h1>
-      <div style={{ position: "relative", flex: 1 }}>
-        <div style={{ position: "absolute", inset: 0, overflowY: "auto", padding: 24 }}>
-          <div style={{ display: "flex", justifyContent: "flex-start" }}>
-            <div style={{ maxWidth: "85%", background: "#F5F5F5", border: "2px solid #000", padding: 12 }}>
-              <p>Message text above chart</p>
-              <AgentChart data={testChart} />
-            </div>
-          </div>
+    <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 32 }}>
+      <section>
+        <h2 style={{ marginBottom: 8, fontWeight: 700 }}>
+          Test A: Raw Recharts PieChart (no AgentChart wrapper)
+        </h2>
+        <div style={{ border: "2px solid red", background: "#fff", padding: 16 }}>
+          <PieChart width={400} height={300}>
+            <Pie
+              data={rawData}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              outerRadius={100}
+            />
+            <Tooltip />
+            <Legend />
+          </PieChart>
         </div>
-      </div>
+      </section>
+
+      <section>
+        <h2 style={{ marginBottom: 8, fontWeight: 700 }}>
+          Test B: AgentChart component
+        </h2>
+        <AgentChart data={testChart} />
+      </section>
     </div>
   );
 }

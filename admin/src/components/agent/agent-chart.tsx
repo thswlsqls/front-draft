@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   PieChart,
   Pie,
@@ -25,6 +25,7 @@ const CHART_COLORS = [
 ];
 
 const CHART_HEIGHT = 300;
+const DEFAULT_WIDTH = 300;
 
 function formatPeriod(meta: ChartMeta): string {
   if (!meta.startDate && !meta.endDate) return "All period";
@@ -39,38 +40,39 @@ interface Props {
 
 export function AgentChart({ data }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(0);
+  const [width, setWidth] = useState(DEFAULT_WIDTH);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 
+    setWidth(el.clientWidth);
+
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        const w = entry.contentRect.width;
-        console.log("[AgentChart] ResizeObserver width:", w);
-        setWidth(w);
+        setWidth(entry.contentRect.width);
       }
     });
     observer.observe(el);
-    const initialWidth = el.clientWidth;
-    console.log("[AgentChart] initial clientWidth:", initialWidth);
-    setWidth(initialWidth);
 
     return () => observer.disconnect();
   }, []);
 
-  console.log("[AgentChart] render:", { width, chartType: data.chartType, dataPoints: data.dataPoints });
+  const coloredData = useMemo(
+    () =>
+      data.dataPoints.map((dp, i) => ({
+        ...dp,
+        value: Number(dp.value),
+        fill: CHART_COLORS[i % CHART_COLORS.length],
+      })),
+    [data.dataPoints],
+  );
 
   if (data.chartType !== "pie" && data.chartType !== "bar") return null;
   if (!Array.isArray(data.dataPoints) || data.dataPoints.length === 0)
     return null;
 
-  // Recharts 3.x: embed fill directly into data for reliable rendering
-  const coloredData = data.dataPoints.map((dp, i) => ({
-    ...dp,
-    fill: CHART_COLORS[i % CHART_COLORS.length],
-  }));
+  const chartWidth = width > 0 ? width : DEFAULT_WIDTH;
 
   return (
     <div
@@ -82,34 +84,35 @@ export function AgentChart({ data }: Props) {
     >
       <h4 className="mb-3 text-sm font-bold">{data.title}</h4>
 
-      {width > 0 && data.chartType === "pie" && (
-        <PieChart width={width} height={CHART_HEIGHT}>
+      {data.chartType === "pie" && (
+        <PieChart width={chartWidth} height={CHART_HEIGHT}>
           <Pie
             data={coloredData}
             dataKey="value"
             nameKey="label"
             cx="50%"
             cy="45%"
-            outerRadius={Math.min(100, (width - 32) / 3)}
-            label={width >= 400}
+            outerRadius={Math.min(100, (chartWidth - 32) / 3)}
+            label={chartWidth >= 400}
+            isAnimationActive={false}
           />
           <Tooltip />
           <Legend />
         </PieChart>
       )}
 
-      {width > 0 && data.chartType === "bar" && (
-        <BarChart width={width} height={CHART_HEIGHT} data={coloredData}>
+      {data.chartType === "bar" && (
+        <BarChart width={chartWidth} height={CHART_HEIGHT} data={coloredData}>
           <XAxis dataKey="label" tick={{ fontSize: 12 }} />
           <YAxis />
           <Tooltip />
-          <Bar dataKey="value" />
+          <Bar dataKey="value" isAnimationActive={false} />
         </BarChart>
       )}
 
       <p className="mt-2 text-xs text-muted-foreground">
         Period: {formatPeriod(data.meta)} | Total:{" "}
-        {data.meta.totalCount.toLocaleString()}
+        {Number(data.meta.totalCount).toLocaleString()}
       </p>
     </div>
   );
