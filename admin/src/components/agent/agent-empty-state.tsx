@@ -4,7 +4,8 @@ import { Bot } from "lucide-react";
 
 const EXAMPLE_GOALS = [
   "Collect latest AI releases from GitHub",
-  "Analyze recent trends in AI model releases",
+  "Provider별 수집 현황을 통계로 보여주세요",
+  "Analyze top keyword trends from collected articles",
   "Search for OpenAI updates this month",
 ];
 

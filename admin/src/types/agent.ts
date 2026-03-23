@@ -16,6 +16,26 @@ export interface AgentExecutionResult {
   analyticsCallCount: number;
   executionTimeMs: number;
   errors: string[];
+  chartData: ChartData[];
+}
+
+export interface ChartData {
+  chartType: "pie" | "bar";
+  title: string;
+  meta: ChartMeta;
+  dataPoints: DataPoint[];
+}
+
+export interface ChartMeta {
+  groupBy: string;
+  startDate: string | null;
+  endDate: string | null;
+  totalCount: number;
+}
+
+export interface DataPoint {
+  label: string;
+  value: number;
 }
 
 export interface SessionResponse {
@@ -60,5 +80,6 @@ export interface DisplayMessage {
   content: string;
   createdAt: string;
   executionMeta?: ExecutionMeta;
+  chartData?: ChartData[];
   failed?: boolean;
 }

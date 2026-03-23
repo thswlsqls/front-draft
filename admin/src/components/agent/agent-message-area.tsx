@@ -134,6 +134,7 @@ export function AgentMessageArea({
             content={msg.content}
             createdAt={msg.createdAt}
             executionMeta={msg.executionMeta}
+            chartData={msg.chartData}
             failed={msg.failed}
             onRetry={msg.failed ? () => onRetry(msg.id) : undefined}
           />

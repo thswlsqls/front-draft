@@ -124,17 +124,28 @@ export default function AgentPage() {
 
         if (!prepend && loadingSessionRef.current !== sid) return;
 
-        const displayMessages: DisplayMessage[] = data.data.list.map(
-          (msg) => ({
+        const seen = new Set<string>();
+        const displayMessages: DisplayMessage[] = data.data.list
+          .filter((msg) => {
+            if (seen.has(msg.messageId)) return false;
+            seen.add(msg.messageId);
+            return true;
+          })
+          .map((msg) => ({
             id: msg.messageId,
             role: msg.role,
             content: msg.content,
             createdAt: msg.createdAt,
-          })
-        );
+          }));
 
         if (prepend) {
-          setMessages((prev) => [...displayMessages, ...prev]);
+          setMessages((prev) => {
+            const existingIds = new Set(prev.map((m) => m.id));
+            const newOnly = displayMessages.filter(
+              (m) => !existingIds.has(m.id)
+            );
+            return [...newOnly, ...prev];
+          });
         } else {
           setMessages(displayMessages);
         }
@@ -238,9 +249,14 @@ export default function AgentPage() {
             executionTimeMs: result.executionTimeMs,
             errors: result.errors,
           },
+          chartData: result.chartData,
         };
 
-        setMessages((prev) => [...prev, assistantMessage]);
+        setMessages((prev) => {
+          const existingIds = new Set(prev.map((m) => m.id));
+          if (existingIds.has(assistantMessage.id)) return prev;
+          return [...prev, assistantMessage];
+        });
       } catch (err) {
         failedGoalRef.current.set(tempId, trimmed);
         setMessages((prev) =>

@@ -4,7 +4,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { AlertCircle, RotateCcw } from "lucide-react";
 import { AgentExecutionMeta } from "./agent-execution-meta";
-import type { ExecutionMeta, MessageRole } from "@/types/agent";
+import { ChartSection } from "./chart-section";
+import type { ChartData, ExecutionMeta, MessageRole } from "@/types/agent";
 
 function formatTimestamp(iso: string): string {
   const date = new Date(iso);
@@ -99,6 +100,7 @@ interface Props {
   content: string;
   createdAt: string;
   executionMeta?: ExecutionMeta;
+  chartData?: ChartData[];
   failed?: boolean;
   onRetry?: () => void;
 }
@@ -108,61 +110,70 @@ export function AgentMessageBubble({
   content,
   createdAt,
   executionMeta,
+  chartData,
   failed,
   onRetry,
 }: Props) {
   const isUser = role === "USER";
 
   return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
-      <div
-        className={`brutal-border p-3 ${
-          isUser
-            ? "ml-auto max-w-[70%] bg-[#3B82F6] text-white"
-            : "max-w-[85%] bg-[#F5F5F5] text-black"
-        }`}
-      >
-        {isUser ? (
-          <p className="whitespace-pre-wrap break-words">{content}</p>
-        ) : (
-          <div className="prose-brutal">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              components={markdownComponents}
-            >
-              {content}
-            </ReactMarkdown>
-          </div>
-        )}
-
-        {isUser && failed && (
-          <div className="mt-2 flex items-center gap-2">
-            <AlertCircle className="size-3.5 text-red-200" />
-            <span className="text-xs text-red-200">Failed to send</span>
-            {onRetry && (
-              <button
-                onClick={onRetry}
-                className="flex items-center gap-1 text-xs text-red-200 hover:underline"
-              >
-                <RotateCcw className="size-3" />
-                Retry
-              </button>
-            )}
-          </div>
-        )}
-
-        {!isUser && executionMeta && (
-          <AgentExecutionMeta meta={executionMeta} />
-        )}
-
-        <p
-          className={`mt-1 font-mono text-xs ${
-            isUser ? "text-white/70" : "text-muted-foreground"
+    <div>
+      <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+        <div
+          className={`brutal-border p-3 ${
+            isUser
+              ? "ml-auto max-w-[70%] bg-[#3B82F6] text-white"
+              : "max-w-[85%] bg-[#F5F5F5] text-black"
           }`}
         >
-          {formatTimestamp(createdAt)}
-        </p>
+          {isUser ? (
+            <p className="whitespace-pre-wrap break-words">{content}</p>
+          ) : (
+            <div className="prose-brutal">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={markdownComponents}
+              >
+                {content}
+              </ReactMarkdown>
+            </div>
+          )}
+
+          {isUser && failed && (
+            <div className="mt-2 flex items-center gap-2">
+              <AlertCircle className="size-3.5 text-red-200" />
+              <span className="text-xs text-red-200">Failed to send</span>
+              {onRetry && (
+                <button
+                  onClick={onRetry}
+                  className="flex items-center gap-1 text-xs text-red-200 hover:underline"
+                >
+                  <RotateCcw className="size-3" />
+                  Retry
+                </button>
+              )}
+            </div>
+          )}
+
+          {!isUser && executionMeta && (
+            <AgentExecutionMeta meta={executionMeta} />
+          )}
+
+          <p
+            className={`mt-1 font-mono text-xs ${
+              isUser ? "text-white/70" : "text-muted-foreground"
+            }`}
+          >
+            {formatTimestamp(createdAt)}
+          </p>
+        </div>
       </div>
+
+      {!isUser && chartData && chartData.length > 0 && (
+        <div className="mt-3 max-w-[85%]">
+          <ChartSection chartData={chartData} />
+        </div>
+      )}
     </div>
   );
 }
