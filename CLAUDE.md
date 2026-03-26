@@ -41,6 +41,10 @@ tech-n-ai-frontend/
 └── CLAUDE.md       # This file (project-wide rules)
 ```
 
+## tmux Development Environment
+
+Run `./scripts/tmux-frontend.sh` to launch a pre-configured tmux session with per-app windows (app, admin), each split into claude-pane and build-pane. See `scripts/tmux-dev-guide.md` for usage details and `scripts/tmux-overview.md` for tmux fundamentals.
+
 ## Conventions
 
 - **Language**: Korean for documentation, English for code and UI text.
