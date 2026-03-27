@@ -43,7 +43,7 @@ tech-n-ai-frontend/
 
 ## tmux Development Environment
 
-Run `./scripts/tmux-frontend.sh` to launch a pre-configured tmux session with per-app windows (app, admin), each split into claude-pane and build-pane. See `scripts/tmux-dev-guide.md` for usage details and `scripts/tmux-overview.md` for tmux fundamentals.
+Run `./scripts/tmux-frontend.sh` to launch a pre-configured tmux session with per-app windows (app, admin), each with 3 panes: claude-pane (50%), dev-pane (25%), tool-pane (25%). See `scripts/tmux-dev-guide.md` for usage details and `scripts/tmux-overview.md` for tmux fundamentals.
 
 ## Conventions
 

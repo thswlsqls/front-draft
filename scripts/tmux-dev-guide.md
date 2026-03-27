@@ -2,7 +2,7 @@
 
 ## 개요
 
-`tmux-frontend.sh`는 tech-n-ai-frontend의 2개 앱(app, admin)에 대해 동일한 레이아웃의 tmux 환경을 자동 구성하는 스크립트이다.
+`tmux-frontend.sh`는 tech-n-ai-frontend의 2개 앱(app, admin)에 대해 3-pane 레이아웃의 tmux 환경을 자동 구성하는 스크립트이다.
 
 ## 세션 구조
 
@@ -12,16 +12,16 @@ frontend-session
 └── admin  [1]  ← admin/  (port 3001, 관리자 앱)
 ```
 
-각 윈도우는 수직 분할(50:50)되어 좌측 claude-pane, 우측 build-pane으로 구성된다.
+각 윈도우는 3-pane으로 분할된다: 좌측 claude-pane(50%), 우상 dev-pane(25%), 우하 tool-pane(25%).
 
 ```
-┌─────────────────┬─────────────────┐
-│  claude-pane    │  build-pane     │
-│                 │                 │
-│  Claude Code    │  npm run dev    │
-│  코드 작업      │  빌드/린트      │
-│                 │                 │
-└─────────────────┴─────────────────┘
+┌──────────────────┬──────────────────┐
+│                  │  dev-pane        │
+│  claude-pane     │  npm run dev     │
+│                  ├──────────────────┤
+│  Claude Code     │  tool-pane       │
+│  코드 작업       │  lint, git 등    │
+└──────────────────┴──────────────────┘
 ```
 
 ## 실행 방법
@@ -47,41 +47,43 @@ frontend-session
 
 | 단축키 | 동작 |
 |--------|------|
-| `Ctrl-b o` | claude-pane ↔ build-pane 전환 |
+| `Ctrl-b o` | 다음 pane으로 전환 |
+| `Ctrl-b 방향키` | 방향으로 pane 이동 |
 | `Ctrl-b z` | 현재 pane 전체화면 토글 (에러 스택트레이스 확인 시 유용) |
 
 ## 활용 예시
 
-### 1. app 개발 (Claude Code + dev 서버)
+### 1. app 개발 (코드 + dev 서버 + 린트)
 
 ```
 # app 윈도우 (Ctrl-b 0)
 [claude-pane] Claude Code로 app 코드 수정
-[build-pane]  npm run dev          # localhost:3000
+[dev-pane]    npm run dev          # localhost:3000
+[tool-pane]   npm run lint         # ESLint 검사
 ```
 
-### 2. admin 개발 (Claude Code + dev 서버)
+### 2. admin 개발 (코드 + dev 서버 + 타입 체크)
 
 ```
 # admin 윈도우 (Ctrl-b 1)
 [claude-pane] Claude Code로 admin 코드 수정
-[build-pane]  npm run dev          # localhost:3001
+[dev-pane]    npm run dev          # localhost:3001
+[tool-pane]   npx tsc --noEmit     # 타입 체크
 ```
 
-### 3. 빌드/린트 확인
+### 3. app + admin 동시 dev 서버 실행
+
+```
+# app 윈도우 (Ctrl-b 0) → dev-pane에서 npm run dev
+# admin 윈도우 (Ctrl-b 1) → dev-pane에서 npm run dev
+# 두 서버가 동시에 실행되며 윈도우 전환으로 각각의 로그를 확인
+```
+
+### 4. 프로덕션 빌드 확인
 
 ```
 # app 윈도우 (Ctrl-b 0)
-[build-pane]  npm run build        # 프로덕션 빌드
-[build-pane]  npm run lint         # ESLint 검사
-```
-
-### 4. app + admin 동시 dev 서버 실행
-
-```
-# app 윈도우 (Ctrl-b 0) → build-pane에서 npm run dev
-# admin 윈도우 (Ctrl-b 1) → build-pane에서 npm run dev
-# 두 서버가 동시에 실행되며 윈도우 전환으로 각각의 로그를 확인
+[tool-pane]   npm run build        # 프로덕션 빌드
 ```
 
 ## 세션 관리
@@ -103,7 +105,7 @@ tmux ls
 ## Backend 세션과 함께 사용
 
 ```bash
-# 터미널 1: backend 세션
+# 터미널 1: backend 세션 (project/module/test 윈도우)
 ./tech-n-ai-backend/scripts/tmux-backend.sh
 
 # 터미널 2: frontend 세션
