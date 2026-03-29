@@ -43,57 +43,9 @@ tech-n-ai-frontend/
 
 ## tmux Development Environment
 
-`./scripts/tmux-frontend.sh`로 사전 구성된 tmux 세션을 실행한다. 이미 세션이 존재하면 자동 attach.
+`./scripts/tmux-frontend.sh`로 앱별 윈도우(app, admin) × 3-pane 구조의 tmux 세션을 실행한다.
 
-### 세션 구조 (frontend-session)
-
-```
-frontend-session
-├── app    [0]  ← app/    (port 3000, 사용자 앱)
-└── admin  [1]  ← admin/  (port 3001, 관리자 앱)
-```
-
-각 윈도우는 동일한 3-pane 레이아웃:
-```
-┌──────────────────┬──────────────────┐
-│                  │  dev-pane (25%)  │
-│  claude-pane     │  npm run dev     │
-│  (50%)           ├──────────────────┤
-│  Claude Code     │  tool-pane (25%) │
-│  코드 작업       │  lint, git 등    │
-└──────────────────┴──────────────────┘
-```
-
-### 주요 단축키
-
-| 단축키 | 동작 |
-|--------|------|
-| `Ctrl-b 0/1` | app / admin 윈도우 이동 |
-| `Ctrl-b o` | 다음 pane 전환 |
-| `Ctrl-b 방향키` | 방향으로 pane 이동 |
-| `Ctrl-b z` | 현재 pane 전체화면 토글 |
-| `Ctrl-b d` | 세션 분리 (백그라운드 유지) |
-
-### Backend 세션과 함께 사용
-
-```bash
-# 세션 간 전환
-Ctrl-b s    # 세션 목록에서 선택
-Ctrl-b (    # 이전 세션
-Ctrl-b )    # 다음 세션
-```
-
-### 세션 관리
-
-```bash
-tmux attach -t frontend-session      # 재연결
-tmux kill-session -t frontend-session # 종료
-tmux ls                               # 세션 목록
-```
-
-### 참고 문서
-
-- `scripts/tmux-dev-guide.md` — 활용 가이드 및 예시
+- `scripts/tmux-dev-guide.md` — 세션 구조 및 활용 가이드
 - `scripts/tmux-recommended-layouts.md` — 대안 레이아웃 구조
 - `scripts/tmux-overview.md` — tmux 기본 개념
 
